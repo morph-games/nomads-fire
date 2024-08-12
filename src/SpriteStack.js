@@ -38,10 +38,13 @@ export default class SpriteStack {
 		ctx.clearRect(0, 0, width, height);
 		const xOffset = Math.round((width - this.imageWidth) / 2);
 		for (let i = 0; i < this.stackCount; i += 1) {
+			const yOffset = this.stackCount - i;
+			const tX = width / 2 + xOffset;
+			const tY = height / 2 + yOffset;
 			ctx.save();
-			ctx.translate(width / 2, height / 2);
+			ctx.translate(tX, tY);
 			ctx.rotate(-rotation);
-			ctx.translate(width / -2, height / -2);
+			ctx.translate(-tX, -tY); // What am I doing wrong here?
 			ctx.drawImage(
 				this.sourceSpritesImage,
 				// Source XY
@@ -52,11 +55,12 @@ export default class SpriteStack {
 				this.imageHeight,
 				// Destination XY
 				xOffset,
-				this.stackCount - i,
+				yOffset,
 				// Destination dimensions
 				this.imageWidth,
 				this.imageHeight,
 			);
+			// ctx.setTransform(1, 0, 0, 1, 0, 0);
 			// ctx.rotate(rotation);
 			ctx.restore();
 		}

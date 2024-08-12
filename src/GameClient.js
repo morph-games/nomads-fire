@@ -204,9 +204,10 @@ export default class GameClient {
 	}
 
 	drawNomad() {
+		this.assembledNomadScreen.fillRect(0, 0, NOMAD_PIXEL_SIZE, NOMAD_PIXEL_SIZE, '#000');
+		const bg = this.assembledNomadScreen.getImage();
+		this.drawThing(bg, this.world.nomad, NOMAD_HALF_SIZE);
 		const { rotation } = this.world.nomad;
-		// this.assembledNomadScreen.fillRect(0, 0, NOMAD_PIXEL_SIZE, NOMAD_PIXEL_SIZE, '#dd1111');
-		// const image = this.assembledNomadScreen.getImage();
 		const image = this.nomadSpriteStack.stack(rotation).getImage();
 		this.drawThing(image, this.world.nomad, NOMAD_HALF_SIZE);
 
