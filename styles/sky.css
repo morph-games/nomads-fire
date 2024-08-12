@@ -1,0 +1,31 @@
+body {
+	background: #443333;
+	text-align: center;
+	padding: 0;
+	margin: 0;
+}
+canvas {
+	image-rendering: pixelated;
+}
+#c {
+	width: 640px;
+	height: 640px;
+	background: #ffffff22;
+}
+
+#console-screen {
+	padding: 2vmin;
+	background: #050506;
+}
+
+#debug canvas {
+	border: solid 2px black;
+	max-width: 50vmin;
+	max-height: 50vmin;
+	margin: 1vmin;
+}
+
+.guy {
+	width: 100px;
+	/* height: 100px; */
+}

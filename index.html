@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Nomads' Fire</title>
+	<meta charset="utf-8">
+	<meta name="description" content="A Game">
+	<meta name="author" content="Morph Games">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<!--
+	<link rel="preload" href="./styles/fonts/LS04b03.woff" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="./styles/fonts/BMSpace.woff" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="./styles/fonts/BMJapan.woff" as="font" type="font/woff2" crossorigin>
+	-->
+	<link href="./styles/sky.css" rel="stylesheet" />
+	<script type="module" src="./src/game.js"></script>
+	<link rel="icon" type="image/x-icon" href="./favicon.ico">
+</head>
+<body>
+	<main>
+		<div id="console">
+			<div id="console-screen">
+				<canvas id="c" width="64" height="64"></canvas>
+			</div>
+		</div>
+		<article id="debug">
+			<canvas id="chunk" width="1280" height="1280"></canvas>
+			<canvas id="nomad"></canvas>
+			<br>
+			<canvas id="scenery"></canvas>
+		</article>
+	</main>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "nomads-fire",
+  "version": "0.1.0",
+  "description": "game for lowrez jam 2024",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "vite dev"
+  },
+  "keywords": [
+    "lowrez"
+  ],
+  "author": "Luke Nickerson",
+  "license": "MIT",
+  "devDependencies": {
+    "rocket-boots-eslint": "github:rocket-boots/rocket-boots-eslint",
+    "vite": "^5.3.5"
+  },
+  "dependencies": {
+    "rocket-utility-belt": "github:rocket-boots/rocket-utility-belt"
+  }
+}
