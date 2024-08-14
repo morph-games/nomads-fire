@@ -9,6 +9,7 @@ export default class Screen {
 		this.height = height;
 		this.centerX = this.width / 2;
 		this.centerY = this.height / 2;
+		this.sizeMultiplier = 1;
 	}
 
 	async init() {
@@ -18,8 +19,10 @@ export default class Screen {
 		if (!this.canvas) {
 			this.canvas = document.createElement('canvas'); // unattached from the DOM
 		}
-		this.canvas.height = this.height;
 		this.canvas.width = this.width;
+		this.canvas.height = this.height;
+		this.canvas.style.width = `${this.width * this.sizeMultiplier}px`;
+		this.canvas.style.height = `${this.height * this.sizeMultiplier}px`;
 		this.ctx = this.canvas.getContext('2d');
 		this.clear();
 	}
@@ -50,6 +53,14 @@ export default class Screen {
 
 	drawPixel(x, y, style) {
 		this.fillRect(x, y, 1, 1, style);
+	}
+
+	drawCenterPixel(x, y, style) {
+		this.drawPixel(this.centerX + x, this.centerY + y, style);
+	}
+
+	drawCenterRect(x = 0, y = 0, w = 1, h = 1, fillStyle = '#000') {
+		this.fillRect(this.centerX + x - w / 2, this.centerY + y - h / 2, w, h, fillStyle);
 	}
 
 	drawCenterLine(x = 0, y = 0, endX = 0, endY = 0, strokeStyle = 'black') {
@@ -95,6 +106,11 @@ export default class Screen {
 
 	fillRect(x, y, w, h, fillStyle) {
 		if (fillStyle) this.ctx.fillStyle = fillStyle;
-		this.ctx.fillRect(round(x), round(y), round(w), round(h));
+		this.ctx.fillRect(x, y, w, h);
+		// this.ctx.fillRect(round(x), round(y), round(w), round(h));
+	}
+
+	drawRect(...args) {
+		this.fillRect(...args);
 	}
 }

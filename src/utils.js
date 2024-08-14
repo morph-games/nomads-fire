@@ -7,6 +7,10 @@ function loop(n, fn) {
 const { sin, cos, PI } = Math;
 const TWO_PI = PI * 2;
 
+function calcVectorLength(x1, y1, x2 = 0, y2 = 0) {
+	return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5;
+}
+
 function getXYCoordinatesFromPolar(angle, r) { // aka. polarToCartesian
 	// Sometimes does it make sense to have x and y alternated?w
 	const y = r * Math.cos(angle);
@@ -60,9 +64,23 @@ function vec2(x = 0, y = undefined) {
 function pick(arr) { return arr[randInt(0, arr.length)]; }
 function uid() { return String(Number(new Date())) + randInt(999); }
 
+// Graphics
+function loopPixelData(canvas, callback) {
+	const ctx = canvas.getContext('2d');
+	const { width, height } = canvas;
+	const imageData = ctx.getImageData(0, 0, width, height);
+	const { data } = imageData;
+	for (let i = 0; i < data.length; i += 4) {
+		callback(data[i], data[i + 1], data[i + 2], data[i + 3], data, i);
+	}
+	return { imageData, ctx, data, width, height };
+}
+
 export {
 	loop, sin, cos,
-	PI, TWO_PI, getXYCoordinatesFromPolar,
+	PI, TWO_PI,
+	calcVectorLength,
+	getXYCoordinatesFromPolar,
 	uid,
 	// rotateByDegree,
 	// getDirectionUnit,
@@ -75,4 +93,5 @@ export {
 	wait,
 	vec2,
 	Vector2,
+	loopPixelData,
 };

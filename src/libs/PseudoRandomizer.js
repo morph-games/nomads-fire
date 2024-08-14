@@ -48,14 +48,14 @@ class PseudoRandomizer {
 		return seed;
 	}
 
-	static getPseudoRand(seed) {
+	static getPseudoRand(seed, magicNumber = MAGIC_NUMBER) {
 		// http://stackoverflow.com/a/19303725/1766230
-		const x = Math.sin(seed) * MAGIC_NUMBER;
+		const x = Math.sin(seed) * magicNumber;
 		return x - Math.floor(x);
 	}
 
-	static getPseudoRandInt(seed, n) {
-		const r = PseudoRandomizer.getPseudoRand(seed);
+	static getPseudoRandInt(seed, n, magicNumber = MAGIC_NUMBER) {
+		const r = PseudoRandomizer.getPseudoRand(seed, magicNumber);
 		return Math.floor(r * n);
 	}
 
@@ -72,6 +72,11 @@ class PseudoRandomizer {
 		const r = PseudoRandomizer.getPseudoRand(this.seed);
 		if (typeof n === 'number') return Math.floor(r * n);
 		return r;
+	}
+
+	pick(arr = []) {
+		const i = this.random(arr.length);
+		return arr[i];
 	}
 
 	getSeedString() {
