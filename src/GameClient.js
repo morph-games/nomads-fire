@@ -124,7 +124,9 @@ export default class GameClient {
 			zip: [1.7,,376,,.01,.02,2,4.6,,-3,4,.21,,.1,8.9,,.32,.6,.03,,101],
 			dud: [1,,376,.03,.05,.05,3,.7,10,17,,,.03,.4,.6,.2,.1,.96,.1,.06,-1315],
 			jets: [.2,,271,.02,.02,.06,4,.2,,-18,,,,,,.1,,.53,.07],
+			thrust: [.2,,110,.07,.08,.43,4,1.7,,,,,,.8,,1.7,.16,0,.25,,1953],
 			// beat: [1.08,,99,.05,.21,.21,,.97,-0.1,5,,,.04,-0.1,1,.1,,.42,.25,.32],
+			zup: [1.7,,674,.04,.26,.07,,2.1,-6,,-149,.05,.06,,,.1,.17,.56,.23,,-517],
 			/* eslint-enable */
 		};
 		if (SOUNDS[p]) zzfx(...SOUNDS[p]);
@@ -138,7 +140,12 @@ export default class GameClient {
 
 	moveNomad(arrow) {
 		this.moveCounter += 1;
-		if (this.moveCounter % 10 === 0) this.playSound('walk');
+		const { nomad } = this.world;
+		if (nomad.flying) {
+			this.playSound('thrust');
+		} else if (this.moveCounter % 10 === 0) {
+			this.playSound('walk');
+		}
 		if (this.moveMode === MOVE_MODE_CARDINAL) {
 			this.sendAction('move', { ...CARDINAL[arrow] });
 			return;
@@ -171,8 +178,9 @@ export default class GameClient {
 	checkInputs() {
 		this.isDrilling = false;
 		if (this.isMouseDown && !this.interface) {
+			const { nomad } = this.world;
 			const worldCoords = this.convertCenterCoordinatesToWorldCoordinates(this.aimingVector);
-			this.isDrilling = (this.getToolOverheat() < 1);
+			this.isDrilling = (this.getToolOverheat() < 1 && !nomad.ridingShipKey);
 			if (!this.isDrilling) {
 				this.playSound('dud');
 			} else {
@@ -186,11 +194,18 @@ export default class GameClient {
 	setupKeys() {
 		const fkey = (e) => ((e.key.length === 1) ? e.key.toLowerCase() : e.key);
 		window.onkeydown = (e) => {
+			e.preventDefault();
 			// treat all single keys as lowercase
 			const key = fkey(e);
+			const { nomad } = this.world;
 			if (key === 'p') this.toggleMoveMode();
-			if (key === 'ArrowUp' || key === 'w') this.moveNomad('up');
-			else if (key === 'ArrowDown' || key === 's') this.moveNomad('down');
+			if (key === 'ArrowUp' || key === 'w') {
+				if (!nomad.flying && nomad.ridingShipKey) {
+					this.sendAction('launch');
+					return;
+				}
+				this.moveNomad('up');
+			} else if (key === 'ArrowDown' || key === 's') this.moveNomad('down');
 			else if (key === 'ArrowLeft' || key === 'a') this.moveNomad('left');
 			else if (key === 'ArrowRight' || key === 'd') this.moveNomad('right');
 			else if (key === ' ') {
@@ -200,6 +215,14 @@ export default class GameClient {
 				if (this.getTotalCarbon() >= FIRE_CARBON_COST) {
 					this.interface = WIN_INTERFACE;
 				}
+			} else if (key === 'e') {
+				if (!this.interface && !e.repeat) {
+					let action = 'mount';
+					if (nomad.flying) action = 'land';
+					else if (nomad.ridingShipKey) action = 'dismount';
+					this.playSound('zup');
+					this.sendAction(action, { x: nomad.x, y: nomad.y });
+				}
 			} else if (key === 'Tab') {
 				this.interface = (this.interface === INV_INTERFACE) ? null : INV_INTERFACE;
 			} else if (key === 'Escape') {
@@ -207,12 +230,6 @@ export default class GameClient {
 				this.introIndex = 0;
 				this.interface = INTRO_INTERFACE;
 			} else console.log(key);
-			// this.keyDown[key] = KEY_DOWN;
-			// this.pushButton(this.keyMap[key]);
-			// if (this.keyMap[key] === undefined) console.log('Unmapped key:', key);
-			// this.moveNomad(0, 1);
-			e.preventDefault();
-			// if (!e.repeat) console.log(this.buttonDown, this.keyDown);
 		};
 		window.onmousemove = (e) => {
 			if (this.interface) return;
@@ -336,7 +353,7 @@ export default class GameClient {
 		const baseColor = `rgba(${r.random(255)},${r.random(255)},${r.random(255)},0.2)`;
 		this.chunkTerrainScreen.fillRect(0, 0, CHUNK_PIXEL_SIZE, CHUNK_PIXEL_SIZE, GROUND_COLOR);
 		// Get Noise (perlin/simplex) and draw it pixel by pixel
-		const chunkPlanetCoords = Planet.convertChunkCoordinatesToPlantCoords(chunk);
+		const chunkPlanetCoords = Planet.convertChunkCoordinatesToPlanetCoords(chunk);
 		this.chunkTerrainScreen.loopPixelData(({ x, y, data, i }) => {
 			const planetCoordsX = chunkPlanetCoords.x + x;
 			const planetCoordsY = chunkPlanetCoords.y + y;
@@ -402,12 +419,14 @@ export default class GameClient {
 		const { items = [], seed } = chunk;
 		const chunkItemRandomizer = new PseudoRandomizer(seed);
 		items.forEach((item) => {
-			if (item.hp <= 0) return;
-			const x = item.x + offset.x;
-			const y = item.y + offset.y;
-			if (item.isShip) {
-				const image = this.shipSpriteStack.getRotatedImage(-0.9);
-				this.screen.drawCenterImage(image, x, y);
+			if (item.hp <= 0 || item.remove) return;
+			const x = item.chunkOffsetX + offset.x;
+			const y = item.chunkOffsetY + offset.y;
+			if (item.ship) {
+				const { x, y } = item;
+				const image = this.shipSpriteStack.getRotatedImage(item.rotation);
+				this.drawThing(image, { x, y, z: 0 }, SHIP_HALF_SIZE);
+				// this.screen.drawCenterImage(image, x, y);
 				return;
 			}
 			this.drawCrystal(item, x, y, chunkItemRandomizer);
@@ -488,9 +507,10 @@ export default class GameClient {
 		// this.assembledNomadScreen.fillRect(0, 0, NOMAD_PIXEL_SIZE, NOMAD_PIXEL_SIZE, '#000');w
 		// const bg = this.assembledNomadScreen.getImage();
 		// this.drawThing(bg, { x, y, z }, NOMAD_HALF_SIZE);
-		const stack = (false) ? this.shipSpriteStack : this.nomadSpriteStack;
+		const stack = (nomad.ridingShipKey) ? this.shipSpriteStack : this.nomadSpriteStack;
 		const image = stack.getRotatedImage(rotation);
-		const step = Math.round(x / 8 + y / 8) % 2; // Add a little bop +1 pixel
+		// Add a little bop +1 pixel if on foot
+		const step = (nomad.flying) ? 0 : Math.round(x / 8 + y / 8) % 2;
 		// TODO: fix magic numbers
 		this.drawThing(image, { x: x - 3, y: y - 5 + step, z }, NOMAD_HALF_SIZE);
 	}

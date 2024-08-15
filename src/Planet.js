@@ -11,7 +11,7 @@ export default class Planet {
 		return { x: getChunkCoord(planetX), y: getChunkCoord(planetY) };
 	}
 
-	static convertChunkCoordinatesToPlantCoords(chunkCoords) {
+	static convertChunkCoordinatesToPlanetCoords(chunkCoords) {
 		return { x: chunkCoords.x * CHUNK_PIXEL_SIZE, y: chunkCoords.y * CHUNK_PIXEL_SIZE };
 	}
 }
