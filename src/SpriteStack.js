@@ -1,4 +1,4 @@
-import { loopPixelData } from './utils.js';
+// import { loopPixelData } from './utils.js';
 import Palette from './Palette.js';
 
 const { PI, round } = Math;

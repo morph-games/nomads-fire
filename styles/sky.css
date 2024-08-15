@@ -3,19 +3,57 @@ body {
 	text-align: center;
 	padding: 0;
 	margin: 0;
+	background: linear-gradient(-45deg, #000, #271f50, #1f262d, #334955, #572431, #7e3740);
+	background-size: 400% 400%;
+	animation: gradient 120s ease infinite;
+	min-height: 100vh;
+	font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+	color: #cfad9f;
 }
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+i {
+	color: #fffefe;
+}
+
 canvas {
 	image-rendering: pixelated;
 }
 #c {
 	width: 640px;
 	height: 640px;
+	max-width: 100vmin;
+	max-height: 100vmin;
 	background: #ffffff22;
+	border: solid 1px #0002;
+	box-shadow: 0 0 1em 1em #0002; 
 }
 
 #console-screen {
-	padding: 2vmin;
-	background: #050506;
+	padding: 3vmin;
+	background: #0008;
+}
+
+#tips {
+	max-width: 30em;
+	margin: 0 auto;
+	padding: 3vmin;
+	text-align: left;;
+}
+
+#debug {
+	display: none;
 }
 
 #debug canvas {

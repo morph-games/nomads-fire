@@ -1,4 +1,6 @@
-const { round, abs, sign } = Math;
+import { loopPixelData } from './utils.js';
+
+const { round, abs, sign, floor } = Math;
 
 export default class Screen {
 	constructor(width, height, canvasId) {
@@ -25,6 +27,27 @@ export default class Screen {
 		this.canvas.style.height = `${this.height * this.sizeMultiplier}px`;
 		this.ctx = this.canvas.getContext('2d');
 		this.clear();
+	}
+
+	loopPixelData(callback, putAfter = true) {
+		const { ctx } = this;
+		const { width, height } = this.canvas;
+		const imageData = ctx.getImageData(0, 0, width, height);
+		const { data } = imageData;
+		for (let i = 0; i < data.length; i += 4) {
+			const pxi = i / 4;
+			callback({
+				r: data[i],
+				g: data[i + 1],
+				b: data[i + 2],
+				a: data[i + 3],
+				data,
+				i,
+				x: pxi % this.width,
+				y: floor(pxi / this.width),
+			});
+		}
+		if (putAfter) this.ctx.putImageData(imageData, 0, 0);
 	}
 
 	getPageCenter() {

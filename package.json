@@ -17,6 +17,7 @@
     "vite": "^5.3.5"
   },
   "dependencies": {
+    "noise-esm": "github:rocket-boots/noise-esm#v1.0.0",
     "rocket-utility-belt": "github:rocket-boots/rocket-utility-belt"
   }
 }

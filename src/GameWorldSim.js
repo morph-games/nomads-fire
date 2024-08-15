@@ -5,7 +5,8 @@ import {
 	MAX_IVENTORY,
 	MAX_TECHNOLOGY,
 } from './constants.js';
-import { vec2, getXYCoordinatesFromPolar, uid, calcVectorLength, randInt } from './utils.js';
+import Planet from './Planet.js';
+import { vec2, getXYCoordinatesFromPolar, uid, calcVectorLength, randInt, clamp } from './utils.js';
 import PseudoRandomizer from './libs/PseudoRandomizer.js';
 
 const MAX_NOMAD_VEL = 18;
@@ -45,14 +46,11 @@ export default class GameWorldSim {
 	}
 
 	static getChunkCoordinatesAt(planetX, planetY) {
-		const getChunkCoord = (n) => Math.floor(
-			((n >= 0) ? n : (PLANET_PIXEL_SIZE + n)) / CHUNK_PIXEL_SIZE,
-		);
-		return { x: getChunkCoord(planetX), y: getChunkCoord(planetY) };
+		return Planet.getChunkCoordinatesAt(planetX, planetY);
 	}
 
 	static convertChunkCoordinatesToWorld(chunkCoords) {
-		return { x: chunkCoords.x * CHUNK_PIXEL_SIZE, y: chunkCoords.y * CHUNK_PIXEL_SIZE };
+		return Planet.convertChunkCoordinatesToPlantCoords(chunkCoords);
 	}
 
 	static addPlanetCoordinates(obj, addCoords) {
@@ -96,6 +94,10 @@ export default class GameWorldSim {
 			inventory: [],
 			technology: [], // WIP
 			news: [], // WIP
+			equippedToolKey: 'A',
+			tools: {
+				A: { overheat: 0, tick: 0 },
+			},
 		};
 
 		// We want to add a ship to the chunk the player starts on, so we first have to get the
@@ -108,6 +110,7 @@ export default class GameWorldSim {
 		const ship = this.makeChunkItem({
 			x: 10,
 			y: 10,
+			hp: 1000,
 			isShip: true,
 		});
 		this.chunkItems[chunkId].push(ship);
@@ -118,10 +121,10 @@ export default class GameWorldSim {
 		const elementsInInvWithSpace = nomad.inventory.filter((invItem) => (
 			invItem.element === element && invItem.quantity < invItem.max
 		));
-		elementsInInvWithSpace.forEach((invItem) => {
+		elementsInInvWithSpace.forEach((invItem) => { // Mutates invItem
 			const space = invItem.max - invItem.quantity;
 			const give = Math.min(quantLeftToGive, space);
-			invItem.quantity += give;
+			invItem.quantity += give; // eslint-disable-line no-param-reassign
 			quantLeftToGive -= give;
 		});
 		if (quantLeftToGive <= 0) return;
@@ -147,7 +150,7 @@ export default class GameWorldSim {
 		if (hooks[what]) hooks[what](data);
 	}
 
-	makeChunkItem(itemData = {}) {
+	makeChunkItem(itemData = {}) { // eslint-disable-line class-methods-use-this
 		return {
 			id: uid(),
 			x: 0,
@@ -220,7 +223,42 @@ export default class GameWorldSim {
 		});
 	}
 
-	updateActions() {
+	doDrillAction(nomad, planetCoords) {
+		const { x = 0, y = 0 } = planetCoords; // planet coordinates
+		const { planet } = this; // TODO: get planet from nomad data
+		const drilledItems = this.findTerrainItemsInRange(planet, { x, y }, 1);
+		const tool = nomad.tools[nomad.equippedToolKey];
+		tool.tick = this.tick;
+		tool.overheat += 0.02;
+		if (tool.overheat >= 1) {
+			tool.overheat = 1.1;
+			return;
+		}
+		// const chunkOn = GameWorldSim.getChunkCoordinatesAt(x, y);
+		// const { items } = this.getChunk(planet, chunkOn.x, chunkOn.y);
+
+		drilledItems.forEach((item) => { // Mutates the item (destroying it)
+			if (item.hp <= 0) return;
+			item.hp -= 1; // eslint-disable-line no-param-reassign
+			const destroyed = (item.hp <= 0);
+			const quantity = destroyed ? item.size : 1;
+			if (item.element) this.giveElement(nomad, item.element, quantity);
+			// if (destroyed || randInt(2) === 0) {
+			// 	if (item.element) this.giveElement(nomad, item.element, quantity);
+			// } else {
+			// 	items.push(this.makeChunkItem({
+			// 		x: item.x - 5 + randInt(11),
+			// 		y: item.y - 5 + randInt(11),
+			// 		size: 1,
+			// 		element: item.element,
+			// 		hp: 1,
+			// 	}));
+			// }
+		});
+		// TODO: Check the tick of the action to avoid drilling too many times in one tickw
+	}
+
+	updateActions(timeMs) {
 		if (this.actionQueue.length === 0) return;
 		const [actionName, nomadId, actionDetails] = this.actionQueue.shift();
 		const nomad = this.nomads[nomadId];
@@ -246,31 +284,7 @@ export default class GameWorldSim {
 			nomad.vel.x = x;
 			nomad.vel.y = y;
 		} else if (actionName === 'drill') {
-			const { x = 0, y = 0 } = actionDetails; // planet coordinates
-			const { planet } = this; // TODO: get planet from nomad data
-			const drilledItems = this.findTerrainItemsInRange(planet, { x, y }, 1);
-			// const chunkOn = GameWorldSim.getChunkCoordinatesAt(x, y);
-			// const { items } = this.getChunk(planet, chunkOn.x, chunkOn.y);
-
-			drilledItems.forEach((item) => {
-				if (item.hp <= 0) return;
-				item.hp -= 1;
-				const destroyed = (item.hp <= 0);
-				const quantity = destroyed ? item.size : 1;
-				if (item.element) this.giveElement(nomad, item.element, quantity);
-				// if (destroyed || randInt(2) === 0) {
-				// 	if (item.element) this.giveElement(nomad, item.element, quantity);
-				// } else {
-				// 	items.push(this.makeChunkItem({
-				// 		x: item.x - 5 + randInt(11),
-				// 		y: item.y - 5 + randInt(11),
-				// 		size: 1,
-				// 		element: item.element,
-				// 		hp: 1,
-				// 	}));
-				// }
-			});
-			// TODO: Check the tick of the action to avoid drilling too many times in one tickw
+			this.doDrillAction(nomad, actionDetails);
 		}
 		if (this.actionQueue.length > 0) this.updateActions();
 	}
@@ -304,15 +318,23 @@ export default class GameWorldSim {
 		});
 	}
 
+	coolDownNomad(nomad, timeMs) {
+		const tool = nomad.tools[nomad.equippedToolKey];
+		if (this.tick - tool.tick > 10) {
+			tool.overheat = Math.max(tool.overheat - 0.003, 0);
+		}
+	}
+
 	async update(timeMs) {
 		this.tick += 1;
 		if (this.tick > 999999) this.tick = 0;
 		// TODO - More simulation
-		this.updateActions();
+		this.updateActions(timeMs);
 		this.updatePhysics(timeMs);
 
 		this.nomadIds.forEach((nId) => {
 			const nomad = { ...this.nomads[nId] };
+			this.coolDownNomad(nomad, timeMs);
 			nomad.x = round(nomad.x);
 			nomad.y = round(nomad.y);
 			const nomadWorldData = {
