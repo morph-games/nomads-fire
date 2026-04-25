@@ -14,10 +14,12 @@
   "license": "MIT",
   "devDependencies": {
     "rocket-boots-eslint": "github:rocket-boots/rocket-boots-eslint",
-    "vite": "^5.3.5"
+    "vite": "^8.0.0",
+    "@vitejs/plugin-vue": "^6.0.6"
   },
   "dependencies": {
     "noise-esm": "github:rocket-boots/noise-esm#v1.0.0",
-    "rocket-utility-belt": "github:rocket-boots/rocket-utility-belt"
+    "rocket-utility-belt": "github:rocket-boots/rocket-utility-belt",
+    "vue": "^3.5.32"
   }
 }

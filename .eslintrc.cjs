@@ -2,6 +2,7 @@ module.exports = {
 	extends: [
 		'./node_modules/rocket-boots-eslint/eslint-config.cjs',
 	],
+	parserOptions: { ecmaVersion: 2020 },
 	rules: {
 		// your custom rules here
 		'import/no-extraneous-dependencies': 0,
