@@ -1,30 +1,34 @@
 # Nomads' Fire
 
-***A game made for the [LowRez Jam 2024](https://itch.io/jam/lowrezjam-2024)***
+***A pixely sci-fi survival game***
 
-## Screenshots
+## Play the Latest
+
+Try the latest code here on GitHub: https://morph-games.github.io/nomads-fire/
+
+The latest release on itch: https://deathray.itch.io/nomads-fire
+
+## Original
+
+Nomads' Fire was originally made for the [LowRez Jam 2024](https://itch.io/jam/lowrezjam-2024). Hopefully it is obvious what [game](https://www.nomanssky.com/) this is inspired by.
+
+### Play
+
+Try the original "lowrez" version here on GitHub: https://morph-games.github.io/nomads-fire/lowrez/ -- This will be preserved as an example of what can fit into 64x64 pixels.
+
+### Screenshots
 
 <img alt="Nomads' Fire Title Screen" src="./images/Screenshot 2024-08-13 221312.png" width="200" />
 <img alt="Gameplay" src="./images/Screenshot 2024-08-15 084855.png" width="200" />
 <img alt="Gameplay" src="./images/Screenshot 2024-08-15 084941.png" width="200" />
 
-
-## Design & Inspiration
-
-Limitations:
+### Design Limitations
 
 * 64x64 Resolution
 * "Peaceful" Theme (and partially "The Main Mission Is A Sidequest" theme since your quest is so mundane)
 * Attempts to use the palette: https://lospec.com/palette-list/eroge-48 for https://itch.io/jam/lospec-jam-3
 * Made in the evenings over the course of ~14 days
 
-Hopefully it is obvious what [game](https://www.nomanssky.com/) this is inspired by.
-
-## Play
-
-Try the latest code here on GitHub: https://morph-games.github.io/nomads-fire/
-
-The latest release on itch: https://deathray.itch.io/nomads-fire
 
 ## Credits
 
