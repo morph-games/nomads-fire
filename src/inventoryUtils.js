@@ -44,3 +44,9 @@ export function payBuildRecipe(builder, thing) {
 	});
 	return true;
 }
+
+// getTotalCarbon(nomad) {
+// const totalC = nomad.inventory.filter((invItem) => invItem.element === 'C')
+// .reduce((sum, invItem) => (sum + invItem.quantity), 0);
+// return totalC;
+// }
