@@ -38,7 +38,7 @@ export default class Palette {
 
 	collect(image) {
 		const paletteObject = Palette.collectPaletteObject(image);
-		console.log(paletteObject);
+		// console.log(paletteObject);
 		this.obj = paletteObject;
 		this.arr = Palette.getPaletteArrayFromObject(paletteObject);
 	}

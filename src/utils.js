@@ -11,6 +11,13 @@ function calcVectorLength(x1, y1, x2 = 0, y2 = 0) {
 	return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5;
 }
 
+function getAngle(x1, y1, x2, y2) {
+	const dy = y2 - y1;
+	const dx = x2 - x1;
+	// return Math.atan2(dy, dx);
+	return Math.atan2(dx, -dy);
+}
+
 function getXYCoordinatesFromPolar(angle, r) { // aka. polarToCartesian
 	// Sometimes does it make sense to have x and y alternated?w
 	const y = r * Math.cos(angle);
@@ -66,7 +73,9 @@ function uid() { return String(Number(new Date())) + randInt(999); }
 
 // Graphics
 function loopPixelData(canvas, callback) {
-	const ctx = canvas.getContext('2d');
+	const ctx = canvas.getContext('2d', { willReadFrequently: true });
+	// ^ Even though we set willReadFrequently here, it needs to be set on the first
+	// context that is created for this canvas, which could be elsewhere.
 	const { width, height } = canvas;
 	const imageData = ctx.getImageData(0, 0, width, height);
 	const { data } = imageData;
@@ -80,6 +89,7 @@ export {
 	loop, sin, cos,
 	PI, TWO_PI,
 	calcVectorLength,
+	getAngle,
 	getXYCoordinatesFromPolar,
 	uid,
 	// rotateByDegree,

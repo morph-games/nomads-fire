@@ -1,3 +1,5 @@
+import { createApp, reactive } from 'vue';
+import UserInterface from './components/UserInterface.vue';
 // import { PseudoRandomizer } from 'rocket-utility-belt';
 import zzfx from './libs/ZzFXMicro.min.esm.js';
 import PseudoRandomizer from './libs/PseudoRandomizer.js';
@@ -12,6 +14,7 @@ import {
 	uid, getXYCoordinatesFromPolar, Vector2, randInt, clamp, pick,
 	loopPixelData,
 } from './utils.js';
+import { payBuildRecipe } from './inventoryUtils.js';
 import {
 	CHUNK_PIXEL_SIZE,
 	NOMAD_PIXEL_SIZE, NOMAD_HALF_SIZE,
@@ -39,6 +42,7 @@ const CRYSTAL_COLORS = {
 	C: ['#9a3846', '#582432', '#bb4f4e', '#dd7261'],
 	H: ['#4189a0', '#73c0c9', '#5580c5', '#4a5bb1', '#325160'],
 	Na: ['#f1d56c', '#d5b14f', '#b38c31'],
+	Fe: ['#555855'],
 };
 const MOVE_MODE_CARDINAL = 0;
 const MOVE_MODE_FACING = 1;
@@ -54,13 +58,8 @@ const FACING_ACTIONS = {
 	left: 'strafeLeft',
 	right: 'strafeRight',
 };
-const INTERFACES = {
-	intro: {},
-	inv: {},
-	options: {},
-	win: {},
-};
 const INV_INTERFACE = 'inv';
+const BUILD_INTERFACE = 'build';
 const INTRO_INTERFACE = 'intro';
 const WIN_INTERFACE = 'win';
 const introBackgrounds = ['title-64x64.png', 'intro-1.png', 'intro-2.png'];
@@ -74,6 +73,7 @@ export default class GameClient {
 			name: 'Norman',
 		};
 		this.localGameWorldSim = null;
+		this.interface = reactive({ open: null, nomad: null, world: null });
 		this.isRunning = true;
 		this.drawId = null;
 		this.ctx = null;
@@ -81,7 +81,7 @@ export default class GameClient {
 		this.screen = null;
 		this.camera = new Vector2(0, 0);
 		this.lastChunkOn = { x: null, y: null };
-		this.chunkTerrainScreen = new Screen(CHUNK_PIXEL_SIZE, CHUNK_PIXEL_SIZE, 'chunk');
+		this.chunkTerrainScreen = new Screen(CHUNK_PIXEL_SIZE, CHUNK_PIXEL_SIZE, 'chunk', { willReadFrequently: true });
 		this.sceneryScreen = new Screen(ITEM_PIXEL_SIZE * 10, ITEM_PIXEL_SIZE * 2, 'scenery');
 		this.assembledNomadScreen = new Screen(NOMAD_PIXEL_SIZE, NOMAD_PIXEL_SIZE, 'nomad');
 		this.chunkTerrainImages = { // Cache the terrain images for each chunk
@@ -89,11 +89,22 @@ export default class GameClient {
 		};
 		this.aimingVector = new Vector2(0, 0);
 		this.moveMode = MOVE_MODE_FACING;
-		this.nomadSpriteStack = null;
-		this.shipSpriteStack = null;
+		this.spriteStackConfig = {
+			ref1: ['refiner-1.png', SHIP_PIXEL_SIZE, 6],
+			ref2: ['refiner-1.png', SHIP_PIXEL_SIZE, 6],
+			ref3: ['refiner-1.png', SHIP_PIXEL_SIZE, 6],
+			rasa1: ['ship-1.png', SHIP_PIXEL_SIZE, 6],
+		};
+		this.spriteStacks = {
+			ref1: null,
+			ref2: null,
+			ref3: null,
+			rasa1: null,
+			nomad1: null,
+		};
+		this.placingWhat = null;
 		this.isMouseDown = false;
 		this.isDrilling = false;
-		this.interface = INTRO_INTERFACE;
 		this.introIndex = 0;
 		this.introBackgroundImages = [];
 		this.tipImages = [];
@@ -177,9 +188,21 @@ export default class GameClient {
 
 	checkInputs() {
 		this.isDrilling = false;
-		if (this.isMouseDown && !this.interface) {
+		if (this.interface.open) return;
+		if (this.isMouseDown) {
 			const { nomad } = this.world;
 			const worldCoords = this.convertCenterCoordinatesToWorldCoordinates(this.aimingVector);
+			if (this.placingWhat) {
+				if (payBuildRecipe(nomad, this.placingWhat)) {
+					this.sendAction('place', { ...worldCoords, what: this.placingWhat });
+				} else {
+					this.playSound('dud');
+				}
+				this.placingWhat = null;
+				this.isMouseDown = false;
+				return;
+			}
+
 			this.isDrilling = (this.getToolOverheat() < 1 && !nomad.ridingShipKey);
 			if (!this.isDrilling) {
 				this.playSound('dud');
@@ -194,9 +217,10 @@ export default class GameClient {
 	setupKeys() {
 		const fkey = (e) => ((e.key.length === 1) ? e.key.toLowerCase() : e.key);
 		window.onkeydown = (e) => {
-			e.preventDefault();
 			// treat all single keys as lowercase
 			const key = fkey(e);
+			if (key.substring(0, 1) === 'F') return; // Allow F12
+			e.preventDefault();
 			const { nomad } = this.world;
 			if (key === 'p') this.toggleMoveMode();
 			if (key === 'ArrowUp' || key === 'w') {
@@ -212,59 +236,62 @@ export default class GameClient {
 				this.localGameWorldSim.addAction(['jump', this.nomad.id]);
 				this.playSound('jets'); // eslint-disable-line
 			} else if (key === 'z') {
-				if (this.getTotalCarbon() >= FIRE_CARBON_COST) {
-					this.interface = WIN_INTERFACE;
-				}
+				this.interface.open = (this.interface.open === BUILD_INTERFACE) ? null : BUILD_INTERFACE;
 			} else if (key === 'e') {
-				if (!this.interface && !e.repeat) {
+				if (!this.interface.open && !e.repeat) {
 					let action = 'mount';
 					if (nomad.flying) action = 'land';
 					else if (nomad.ridingShipKey) action = 'dismount';
 					this.playSound('zup');
 					this.sendAction(action, { x: nomad.x, y: nomad.y });
 				}
-			} else if (key === 'Tab') {
-				this.interface = (this.interface === INV_INTERFACE) ? null : INV_INTERFACE;
+			} else if (key === 'Tab' || key === 'i') {
+				this.interface.open = (this.interface.open === INV_INTERFACE) ? null : INV_INTERFACE;
+				this.interface.nomad = this.world.nomad;
 			} else if (key === 'Escape') {
 				// LATER: Make this an options/discoveries/expedition menu
 				this.introIndex = 0;
-				this.interface = INTRO_INTERFACE;
+				this.interface.open = null;
 			} else console.log(key);
 		};
-		window.onmousemove = (e) => {
-			if (this.interface) return;
+		window.onpointermove = (e) => {
+			// if (this.interface) return;
 			this.aimingVector = this.getScreenVector(e);
 			const angle = Math.atan2(this.aimingVector.x, this.aimingVector.y);
 			this.turnNomad(angle);
 		};
-		window.onmousedown = (e) => {
+		window.onpointerdown = (e) => { // click
 			this.isMouseDown = true;
 		};
-		window.onmouseup = (e) => {
+		window.onpointerup = (e) => {
 			this.isMouseDown = false;
-		};
-		window.onclick = (e) => {
-			if (this.interface === INTRO_INTERFACE) {
-				this.introIndex += 1;
-				this.playSound('zip');
-				if (this.introIndex >= introBackgrounds.length) {
-					this.interface = null;
-					this.playSound('gameGo');
-				}
-			} else if (this.interface === WIN_INTERFACE) {
-				this.interface = null;
-			}
 		};
 		window.setInterval(() => this.checkInputs(), 100);
 	}
 
 	async setupNomadSpriteStack() {
 		const nomadSpriteSheet = await ImageLoader.loadImage('guy8-100x10.png');
-		this.nomadSpriteStack = new SpriteStack(nomadSpriteSheet, 10, 8);
-		const c = this.nomadSpriteStack.stack(0).correctColors().getCanvas();
-		this.nomadSpriteStack.cacheAllRotationImages();
+		this.spriteStacks.nomad1 = new SpriteStack(nomadSpriteSheet, 10, 8);
+		const c = this.spriteStacks.nomad1.stack(0).correctColors().getCanvas();
+		this.spriteStacks.nomad1.cacheAllRotationImages();
 		c.classList.add('guy');
 		document.getElementById('debug').appendChild(c);
+	}
+
+	async loadSpriteStacks() {
+		const keys = Object.keys(this.spriteStackConfig);
+		const imageFiles = keys.map(
+			(entityTypeKey) => this.spriteStackConfig[entityTypeKey][0],
+		);
+		const sheets = await ImageLoader.loadImages(imageFiles);
+		keys.forEach((entityTypeKey, i) => {
+			const [, pixelSize, stackCount = 6, rot = 0] = this.spriteStackConfig[entityTypeKey];
+			const ss = new SpriteStack(sheets[i], pixelSize, stackCount);
+			ss.rotationOffset = PI + rot;
+			ss.cacheAllRotationImages();
+			this.spriteStacks[entityTypeKey] = ss;
+		});
+		return this.spriteStacks;
 	}
 
 	async loadGameImages() {
@@ -274,10 +301,33 @@ export default class GameClient {
 			'Click-Drill-64x10.png', 'Tab-Inventory-64x10.png', 'W-Walk-64x10.png',
 		]);
 		this.campFireImage = await ImageLoader.loadImage('camp-fire.png');
-		const shipStackSpriteSheet = await ImageLoader.loadImage('ship-1.png');
-		this.shipSpriteStack = new SpriteStack(shipStackSpriteSheet, SHIP_PIXEL_SIZE, 6);
-		this.shipSpriteStack.rotationOffset = PI;
-		this.shipSpriteStack.cacheAllRotationImages();
+
+		// const shipStackSpriteSheet = await ImageLoader.loadImage('ship-1.png');
+		// this.spriteStacks.rasa1 = new SpriteStack(shipStackSpriteSheet, SHIP_PIXEL_SIZE, 6);
+		// this.spriteStacks.rasa1.rotationOffset = PI;
+		// this.spriteStacks.rasa1.cacheAllRotationImages();
+		await this.loadSpriteStacks();
+	}
+
+	handleVueEvent(e) {
+		if (!e.detail) {
+			console.warn('Vue event without detail');
+			return;
+		}
+		switch (e.detail?.action) {
+			case 'goBack': {
+				this.interface.open = null;
+				return;
+			}
+			case 'selectDeployable': {
+				// TODO: If cannot afford recipe then do nothing and return
+				this.interface.open = null;
+				this.placingWhat = e.detail.deployable;
+				return;
+			}
+			default: console.log('Unhandled action', e.detail.action);
+		}
+		console.log('Unhandled event from Vue', e);
 	}
 
 	async init() {
@@ -293,6 +343,12 @@ export default class GameClient {
 		await this.setupNomadSpriteStack();
 		this.startDraw();
 		this.setupKeys();
+
+		// Set up the Vue UI and listen for events from it
+		const eventType = 'vue-ui-event';
+		window.addEventListener(eventType, (e) => this.handleVueEvent(e));
+		const ui = createApp(UserInterface, { eventType, state: this.interface });
+		ui.mount('#ui');
 	}
 
 	async startLocalGameWorldSim() {
@@ -415,6 +471,12 @@ export default class GameClient {
 		}
 	}
 
+	drawSpriteStackItem(item) {
+		const { x, y, z = 0, key, rotation } = item;
+		const image = this.spriteStacks[key].getRotatedImage(rotation);
+		this.drawThing(image, { x, y, z }, SHIP_HALF_SIZE);
+	}
+
 	drawChunkItems(chunk, offset) {
 		const { items = [], seed } = chunk;
 		const chunkItemRandomizer = new PseudoRandomizer(seed);
@@ -422,11 +484,8 @@ export default class GameClient {
 			if (item.hp <= 0 || item.remove) return;
 			const x = item.chunkOffsetX + offset.x;
 			const y = item.chunkOffsetY + offset.y;
-			if (item.ship) {
-				const { x, y } = item;
-				const image = this.shipSpriteStack.getRotatedImage(item.rotation);
-				this.drawThing(image, { x, y, z: 0 }, SHIP_HALF_SIZE);
-				// this.screen.drawCenterImage(image, x, y);
+			if (this.spriteStacks[item.key]) {
+				this.drawSpriteStackItem(item);
 				return;
 			}
 			this.drawCrystal(item, x, y, chunkItemRandomizer);
@@ -507,7 +566,7 @@ export default class GameClient {
 		// this.assembledNomadScreen.fillRect(0, 0, NOMAD_PIXEL_SIZE, NOMAD_PIXEL_SIZE, '#000');w
 		// const bg = this.assembledNomadScreen.getImage();
 		// this.drawThing(bg, { x, y, z }, NOMAD_HALF_SIZE);
-		const stack = (nomad.ridingShipKey) ? this.shipSpriteStack : this.nomadSpriteStack;
+		const stack = (nomad.ridingShipKey) ? this.spriteStacks.rasa1 : this.spriteStacks.nomad1;
 		const image = stack.getRotatedImage(rotation);
 		// Add a little bop +1 pixel if on foot
 		const step = (nomad.flying) ? 0 : Math.round(x / 8 + y / 8) % 2;
@@ -523,7 +582,7 @@ export default class GameClient {
 
 	drawInterface() {
 		const { width, height } = this.screen;
-		if (!this.interface) {
+		if (!this.interface.open) {
 			const barW = 20;
 			this.screen.drawRect(width - barW - 1, height - 2, barW, 1, '#21202088');
 			const totalC = this.getTotalCarbon();
@@ -544,7 +603,8 @@ export default class GameClient {
 			else if (oh < 0.9) heatColor = '#bb4f4e';
 			else heatColor = '#9a3846';
 			this.screen.drawRect(width - overheatW - 1, 2, overheatW, 1, heatColor);
-		} else if (this.interface === INV_INTERFACE) {
+		} else if (this.interface.open === INV_INTERFACE) {
+			/*
 			this.screen.drawRect(0, 0, 64, 64, '#1f2c37dd');
 			this.screen.drawRect(1, 12, 62, 1, '#325160');
 			this.screen.drawRect(1, 30, 62, 1, '#325160');
@@ -570,11 +630,13 @@ export default class GameClient {
 					i += 1;
 				}
 			}
-		} else if (this.interface === INTRO_INTERFACE) {
-			this.screen.drawImage(this.introBackgroundImages[this.introIndex], 0, 0);
-		} else if (this.interface === WIN_INTERFACE) {
-			this.screen.drawImage(this.campFireImage, 0, 0);
+			*/
 		}
+		// else if (this.interface === INTRO_INTERFACE) {
+		// 	// this.screen.drawImage(this.introBackgroundImages[this.introIndex], 0, 0);
+		// } else if (this.interface === WIN_INTERFACE) {
+		// 	// this.screen.drawImage(this.campFireImage, 0, 0);
+		// }
 	}
 
 	draw() {

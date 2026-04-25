@@ -7,7 +7,7 @@ import {
 } from './constants.js';
 import Planet from './Planet.js';
 import {
-	vec2, getXYCoordinatesFromPolar, uid, calcVectorLength, randInt, clamp, lerp,
+	vec2, getAngle, getXYCoordinatesFromPolar, uid, calcVectorLength, lerp,
 } from './utils.js';
 import PseudoRandomizer from './libs/PseudoRandomizer.js';
 
@@ -16,6 +16,12 @@ const MAX_SHIP_VEL = 200;
 const MAX_ITEM_SIZE = 7;
 
 const { round, abs } = Math;
+
+const SHIP_BASICS = {
+	hp: 1000,
+	ship: 'rasa',
+	rotation: -0.9,
+};
 
 export default class GameWorldSim {
 	constructor(name, seed = 1000) {
@@ -74,15 +80,6 @@ export default class GameWorldSim {
 			+ PseudoRandomizer.getPseudoRandInt(chunkY, 999);
 	}
 
-	makeChunkShip(item = {}, chunkCoords) {
-		return this.makeChunkItem({ // Create ship
-			hp: 1000,
-			ship: 'rasa',
-			rotation: -0.9,
-			...item,
-		}, chunkCoords);
-	}
-
 	join(nomadId, details = {}) {
 		const { nomads, nomadIds } = this;
 		if (nomads[nomadId]) return; // already there
@@ -121,8 +118,12 @@ export default class GameWorldSim {
 		const chunkId = GameWorldSim.makeChunkId(planet, chunkOn.x, chunkOn.y);
 		const chunkSeed = GameWorldSim.makeChunkSeed(planet, chunkOn.x, chunkOn.y);
 		this.chunkItems[chunkId] = this.makeChunkItems(chunkSeed, chunkOn);
-		const ship = this.makeChunkShip({ chunkOffsetX: 18, chunkOffsetY: 18 }, chunkOn);
-		this.chunkItems[chunkId].push(ship);
+		// Start with a ship?
+		// const ship = this.makeChunkItem(
+		// 	{ ...SHIP_BASICS, chunkOffsetX: 18, chunkOffsetY: 18 },
+		// 	chunkOn,
+		// );
+		// this.chunkItems[chunkId].push(ship);
 	}
 
 	giveElement(nomad, element, quantity) {
@@ -298,21 +299,27 @@ export default class GameWorldSim {
 	}
 
 	nomadDismount(nomad) {
-		const { planet } = this; // TODO: get from nomad
-		const chunkCoords = Planet.getChunkCoordinatesAt(nomad.x, nomad.y);
-		const chunkPlanetCoords = Planet.convertChunkCoordinatesToPlanetCoords(chunkCoords);
-		const chunkId = GameWorldSim.makeChunkId(planet, chunkCoords.x, chunkCoords.y);
-		// Get items, assuming we have this chunk cached already
-		const items = this.getChunkItems(chunkId);
-		const chunkOffsetX = round(nomad.x) - chunkPlanetCoords.x;
-		const chunkOffsetY = round(nomad.y) - chunkPlanetCoords.y;
-		const ship = this.makeChunkShip({ chunkOffsetX, chunkOffsetY }, chunkCoords);
+		const ship = this.addItemNear({ ...SHIP_BASICS }, nomad, this.planet);
+		// ^ TODO: get planet from nomad
 		ship.rotation = nomad.rotation;
-		items.push(ship);
 		nomad.ridingShipKey = null;
 		nomad.flying = false;
 		nomad.vel.x = 6;
 		nomad.vel.z = 8;
+	}
+
+	addItemNear(itemObj = {}, pos = {}, planet = this.planet) {
+		const { x = 0, y = 0 } = pos;
+		const chunkCoords = Planet.getChunkCoordinatesAt(x, y);
+		const chunkPlanetCoords = Planet.convertChunkCoordinatesToPlanetCoords(chunkCoords);
+		const chunkId = GameWorldSim.makeChunkId(planet, chunkCoords.x, chunkCoords.y);
+		// Get items, assuming we have this chunk cached already
+		const items = this.getChunkItems(chunkId);
+		const chunkOffsetX = round(x) - chunkPlanetCoords.x;
+		const chunkOffsetY = round(y) - chunkPlanetCoords.y;
+		const thing = this.makeChunkItem({ ...itemObj, chunkOffsetX, chunkOffsetY }, chunkCoords);
+		items.push(thing);
+		return thing;
 	}
 
 	updateActions(timeMs) {
@@ -359,6 +366,13 @@ export default class GameWorldSim {
 			nomad.flying = false;
 		} else if (actionName === 'launch') {
 			nomad.flying = true;
+		} else if (actionName === 'place') {
+			console.log('Place', actionDetails, nomad);
+			const { x, y, what } = actionDetails;
+			const rotation = getAngle(x, nomad.y, nomad.x, y);
+			this.addItemNear({ ...what, rotation }, { x, y });
+		} else {
+			console.log('Unknown action', actionName);
 		}
 		if (this.actionQueue.length > 0) this.updateActions();
 	}

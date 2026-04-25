@@ -57,7 +57,7 @@ export default class SpriteStack {
 	}
 
 	stack(rotation = 0) {
-		const ctx = this.stackedCanvas.getContext('2d');
+		const ctx = this.stackedCanvas.getContext('2d', { willReadFrequently: true });
 		ctx.save();
 		const { width, height } = this.stackedCanvas;
 		const centerX = width / 2;

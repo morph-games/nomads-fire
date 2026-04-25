@@ -8,7 +8,7 @@ export default class GameClientScreen extends Screen {
 
 	static async make() {
 		const gcs = new GameClientScreen();
-		gcs.sizeMultiplier = 10;
+		gcs.sizeMultiplier = 6;
 		await gcs.init();
 		return gcs;
 	}

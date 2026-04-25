@@ -1,6 +1,22 @@
-export const CHUNK_PIXEL_SIZE = 64; // 1280
+const keyize = (objectOfObjects = {}) => {
+	Object.keys(objectOfObjects).forEach(
+		(key) => { objectOfObjects[key].key = key; }, // eslint-disable-line no-param-reassign
+	);
+	return objectOfObjects;
+};
+const arrayize = (objectOfObjects = {}) => {
+	const arr = [];
+	Object.keys(objectOfObjects).forEach(
+		(key) => {
+			arr.push({ ...objectOfObjects[key], key });
+		},
+	);
+	return arr;
+};
+
+export const CHUNK_PIXEL_SIZE = 164; // 1280
 export const PLANET_CHUNK_SIZE = 1000;
-export const SCREEN_SIZE = 64;
+export const SCREEN_SIZE = 164;
 export const PLANET_PIXEL_SIZE = PLANET_CHUNK_SIZE * CHUNK_PIXEL_SIZE;
 export const NOMAD_PIXEL_SIZE = 10;
 export const SHIP_PIXEL_SIZE = 16;
@@ -11,6 +27,7 @@ export const INV_ITEMS = {
 	C: { name: 'Carbon', element: 'C', max: 64, color: '#9a3846' },
 	Na: { name: 'Sodium', element: 'Na', max: 64, color: '#d5b14f' },
 	H: { name: 'Di-Hydrogen', element: 'H', max: 64, color: '#4a5bb1' },
+	Fe: { name: 'Ferrite', element: 'F', max: 64, color: '#4a5bb1' },
 };
 export const MAX_IVENTORY = 24;
 export const MAX_TECHNOLOGY = 12;

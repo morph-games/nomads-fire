@@ -3,7 +3,7 @@ import { loopPixelData } from './utils.js';
 const { round, abs, sign, floor } = Math;
 
 export default class Screen {
-	constructor(width, height, canvasId) {
+	constructor(width, height, canvasId, options) {
 		this.canvasId = canvasId;
 		this.canvas = null;
 		this.ctx = null;
@@ -12,6 +12,7 @@ export default class Screen {
 		this.centerX = this.width / 2;
 		this.centerY = this.height / 2;
 		this.sizeMultiplier = 1;
+		this.options = { ...options };
 	}
 
 	async init() {
@@ -23,9 +24,11 @@ export default class Screen {
 		}
 		this.canvas.width = this.width;
 		this.canvas.height = this.height;
-		this.canvas.style.width = `${this.width * this.sizeMultiplier}px`;
-		this.canvas.style.height = `${this.height * this.sizeMultiplier}px`;
-		this.ctx = this.canvas.getContext('2d');
+		// this.canvas.style.width = `${this.width * this.sizeMultiplier}px`;
+		// this.canvas.style.height = `${this.height * this.sizeMultiplier}px`;
+		const canvasConfig = {};
+		if (this.options.willReadFrequently) canvasConfig.willReadFrequently = true;
+		this.ctx = this.canvas.getContext('2d', canvasConfig);
 		this.clear();
 	}
 

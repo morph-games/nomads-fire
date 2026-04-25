@@ -4,9 +4,9 @@
 
 ## Play the Latest
 
-Try the latest code here on GitHub: https://morph-games.github.io/nomads-fire/
+Try the latest code here on GitHub: https://morph-games.github.io/nomads-fire/dist/
 
-The latest release on itch: https://deathray.itch.io/nomads-fire
+The last release on itch: https://deathray.itch.io/nomads-fire
 
 ## Original
 
