@@ -198,6 +198,7 @@ export default class GameClient {
 				this.playSound('jets'); // eslint-disable-line
 			} else if (key === 'z') {
 				this.interface.open = (this.interface.open === BUILD_INTERFACE) ? null : BUILD_INTERFACE;
+				this.interface.nomad = this.world.nomad;
 			} else if (key === 'e') {
 				if (!this.interface.open && !e.repeat) {
 					let action = 'mount';

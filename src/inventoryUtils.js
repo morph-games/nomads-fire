@@ -24,6 +24,12 @@ export function getAffordableBuildRecipe(builder, thing) {
 	return affordableRecipes.length ? affordableRecipes[0] : null; // Take the first one found
 }
 
+export function canAffordToBuild(builder, thing) {
+	const recipe = getAffordableBuildRecipe(builder, thing);
+	if (!recipe) return false;
+	return canAffordBuildRecipe(builder, recipe);
+}
+
 /** Mutates the builder's inventory */
 export function payBuildRecipe(builder, thing) {
 	const recipe = getAffordableBuildRecipe(builder, thing);

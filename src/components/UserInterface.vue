@@ -31,6 +31,7 @@ function handleRightClick() {
 			:state="state"
 			:emit-event="emitEventToGameClient" />
 		<BuildMenu v-if="state.open === 'build'"
+			:nomad="state.nomad"
 			:emit-event="emitEventToGameClient" />
 	</div>
 </template>
