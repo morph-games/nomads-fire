@@ -1,0 +1,7 @@
+{
+  "search.exclude": {
+    "**/archive": true,
+	  "**/lowrez": true,
+    "**/dist": true
+  }
+}

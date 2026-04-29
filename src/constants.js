@@ -17,6 +17,7 @@ const arrayize = (objectOfObjects = {}) => {
 export const CHUNK_PIXEL_SIZE = 164; // 1280
 export const PLANET_CHUNK_SIZE = 1000;
 export const SCREEN_SIZE = 164;
+// SNES was 256 x 224, NES was 256 x 240
 export const PLANET_PIXEL_SIZE = PLANET_CHUNK_SIZE * CHUNK_PIXEL_SIZE;
 export const NOMAD_PIXEL_SIZE = 10;
 export const SHIP_PIXEL_SIZE = 16;

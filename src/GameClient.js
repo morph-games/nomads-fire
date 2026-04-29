@@ -139,6 +139,8 @@ export default class GameClient {
 			floor((x - screenCenter.x) / screen.sizeMultiplier),
 			floor((y - screenCenter.y) / screen.sizeMultiplier),
 		);
+		// FIXME: If the sizeMultiplier is not used to set the canvas height, width, and
+		// it is set via CSS, then we need to dynamically determine this size multiplier
 	}
 
 	convertCenterCoordinatesToWorldCoordinates({ x, y }) {
