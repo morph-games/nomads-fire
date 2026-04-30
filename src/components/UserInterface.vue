@@ -26,7 +26,7 @@ function handleRightClick() {
 
 <template>
 	<div class="ui-inside" @contextmenu.prevent="handleRightClick">
-		{{ state.open }}
+		<!-- {{ state.open }} -->
 		<InventoryMenu v-if="state.open === 'inv'"
 			:state="state"
 			:emit-event="emitEventToGameClient" />

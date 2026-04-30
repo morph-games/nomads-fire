@@ -14,23 +14,23 @@ export const ENTITY_TYPES = keyize({
 		deployable: true,
 		recipes: [{ resourceCost: ['Na:3'] }],
 	},
-	ref2: {
-		name: 'Refiner Mk.2',
-		deployable: true,
-		recipes: [{ resourceCost: ['Fe:3', 'Na:2'] }],
-	},
-	ref3: {
-		name: 'Refiner Mk.3',
-		deployable: true,
-		recipes: [{ resourceCost: ['Fe:3', 'Na:5'] }],
-	},
+	// ref2: {
+	// 	name: 'Refiner Mk.2',
+	// 	deployable: true,
+	// 	recipes: [{ resourceCost: ['H:3', 'Na:2'] }],
+	// },
+	// ref3: {
+	// 	name: 'Refiner Mk.3',
+	// 	deployable: true,
+	// 	recipes: [{ resourceCost: ['H:3', 'Na:5'] }],
+	// },
 	rasa1: {
 		name: 'Starship',
 		subTitle: 'Interstellar Flying Machine',
 		deployable: true,
 		ship: 'rasa',
 		hp: 1000,
-		recipes: [{ resourceCost: ['Fe:3', 'Na:5'] }],
+		recipes: [{ resourceCost: ['C:50', 'Na:50'] }],
 	},
 	// - - - - - - - - - - - - - Elements
 	eltFe: {
